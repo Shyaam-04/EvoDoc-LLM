@@ -34,8 +34,6 @@ def check_allergies(medicines: list[str], known_allergies: list[str]) -> list:
     matches = []
     for medicine in medicines:
         for known_allergy in known_allergies:
-            print(f"Comparing: {medicine.lower()} vs {known_allergy.lower()}")
-
             #exact matching
             if medicine.lower() == known_allergy.lower():
                 matches.append({
@@ -43,5 +41,15 @@ def check_allergies(medicines: list[str], known_allergies: list[str]) -> list:
                     "reason": f"Patient is allergic to {known_allergy}",
                     "severity": "high"
                 })
+
+            #mapping with drug classes
+            else:
+                for drug_class, drug_items in DRUG_CLASS_MAP.items():
+                    if known_allergy.lower() == drug_class.lower() and medicine.lower() in drug_items:
+                        matches.append({
+                            "medicine": medicine,
+                            "reason": f"{drug_class} class",
+                            "severity": "high"
+                        })
 
     return matches

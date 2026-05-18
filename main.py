@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models import DrugCheckRequest, DrugCheckResponse
 from engine import load_fallback_data, check_interactions_fallback, check_allergies
+from cache import make_cache_key, get_from_cache, save_to_cache
 import time
 app = FastAPI()
 
@@ -13,6 +14,15 @@ def home():
 @app.post("/check-drugs")
 def check_drugs(request: DrugCheckRequest):
     start_time = time.time()
+
+    #checking cache
+    cache_key = make_cache_key(request.medicines, request.patient_history.current_medications)
+    cache = get_from_cache(cache_key)
+    if cache:
+        cache["cache_hit"] = True
+        return cache
+
+
     fallback_data = load_fallback_data()
     interactions = check_interactions_fallback(request.medicines, fallback_data)
     allergies = check_allergies(request.medicines, request.patient_history.known_allergies)
@@ -35,7 +45,7 @@ def check_drugs(request: DrugCheckRequest):
 
 
 
-    return DrugCheckResponse(
+    response =  DrugCheckResponse(
         interactions = interactions,
         allergy_alerts = allergies,
         safe_to_prescribe = safe_to_prescribe,
@@ -45,4 +55,6 @@ def check_drugs(request: DrugCheckRequest):
         cache_hit = False,
         processing_time_ms = response_time
     )
+    save_to_cache(cache_key, response.model_dump())
+    return response
 
