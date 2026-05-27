@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from models import DrugCheckRequest, DrugCheckResponse
 from engine import load_fallback_data, check_interactions_fallback, check_allergies, check_interactions_llm
 from cache import make_cache_key, get_from_cache, save_to_cache
@@ -104,6 +107,8 @@ def check_drugs(request: DrugCheckRequest, db: Session = Depends(get_db)):
         patient_conditions = json.dumps(request.patient_history.conditions),
         known_allergies = json.dumps(request.patient_history.known_allergies),
         current_medications = json.dumps(request.patient_history.current_medications),
+        interactions = json.dumps(interactions),
+        allergy_alerts = json.dumps(allergies),
         risk_level = overall_risk_level,
         safe_to_prescribe = safe_to_prescribe,
         requires_doctor_review = requires_doctor_review,
@@ -130,11 +135,15 @@ def get_history(db: Session = Depends(get_db)):
             "doctor_id": check.doctor_id,
             "medicines": json.loads(check.medicines),
             "risk_level": check.risk_level,
+            "overall_risk_level": check.risk_level,
             "safe_to_prescribe": check.safe_to_prescribe,
             "requires_doctor_review": check.requires_doctor_review,
             "source": check.source,
             "processing_time_ms": check.processing_time_ms,
-            "timestamp": check.timestamp
+            "timestamp": check.timestamp,
+            "interactions": json.loads(check.interactions) if check.interactions else [],
+            "allergy_alerts": json.loads(check.allergy_alerts) if check.allergy_alerts else [],
+            "cache_hit": False
         })
     
     return {"checks": result, "total": len(result)}
@@ -165,3 +174,17 @@ def get_stats(db: Session = Depends(get_db)):
             "fallback": fallback_count
         }
     }
+
+
+# Serve React Frontend static files
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIST_DIR = os.path.join(BASE_DIR, "..", "frontend", "dist")
+
+if os.path.exists(FRONTEND_DIST_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST_DIR, "assets")), name="assets")
+
+    @app.get("/")
+    def serve_frontend():
+        return FileResponse(os.path.join(FRONTEND_DIST_DIR, "index.html"))
+else:
+    print(f"Warning: Frontend distribution directory not found at {FRONTEND_DIST_DIR}. Run 'npm run build' inside frontend/ to serve the UI.")

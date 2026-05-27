@@ -23,8 +23,7 @@ pydantic==2.13.4
 pydantic-extra-types==2.11.1
 pydantic-settings==2.11.0
 pydantic_core==2.46.4
-Pygments==2.20.0
-python-dotenv==1.2.1
+Pygments==2.20.0SQLAlchemy==2.0.49python-dotenv==1.2.1
 python-multipart==0.0.20
 PyYAML==6.0.3
 rich==15.0.0
@@ -42,3 +41,4 @@ uvicorn==0.39.0
 uvloop==0.22.1
 watchfiles==1.1.1
 websockets==15.0.1
+requests==2.32.5

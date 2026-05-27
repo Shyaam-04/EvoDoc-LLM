@@ -14,6 +14,8 @@ class Check(Base):
     patient_conditions = Column(String, nullable=True)
     known_allergies = Column(String, nullable=True)
     current_medications = Column(String, nullable=True)
+    interactions = Column(String, nullable=True)
+    allergy_alerts = Column(String, nullable=True)
     risk_level = Column(String, nullable = False)
     safe_to_prescribe = Column(Boolean, nullable=False)
     requires_doctor_review = Column(Boolean, nullable=False)
